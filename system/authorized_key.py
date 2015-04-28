@@ -218,6 +218,12 @@ def parseoptions(module, options):
     reads a string containing ssh-key options 
     and returns a dictionary of those options
     '''
+
+    OPTIONS_WITH_MULTIPLE_VALUES = [
+        'environment',
+        'permitopen',
+    ]
+
     options_dict = keydict() #ordered dict
     if options:
         try:
@@ -228,9 +234,17 @@ def parseoptions(module, options):
             for part in parts:
                 if "=" in part:
                     (key, value) = part.split("=", 1)
-                    options_dict[key] = value
+                    # certain options can have multiple entries in the authorized_keys file
+                    if key in OPTIONS_WITH_MULTIPLE_VALUES:
+                        if key in options_dict.keys():
+                            options_dict[key].append(value)
+                        else:
+                            options_dict[key] = [value]
+                    else:
+                        options_dict[key] = value
                 elif part != ",":
                     options_dict[part] = None
+
         except:
             module.fail_json(msg="invalid option string: %s" % options)
 
@@ -322,7 +336,11 @@ def writekeys(module, filename, keys):
                     option_strings = []
                     for option_key in options.keys():
                         if options[option_key]:
-                            option_strings.append("%s=%s" % (option_key, options[option_key]))
+                            if isinstance(options[option_key], list):
+                                for option_value in options[option_key]:
+                                    option_strings.append("%s=%s" % (option_key, option_value))
+                            else:
+                                option_strings.append("%s=%s" % (option_key, options[option_key]))
                         else:
                             option_strings.append("%s" % option_key)
 
