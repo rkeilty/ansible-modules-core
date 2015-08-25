@@ -236,7 +236,7 @@ def parseoptions(module, options):
                     (key, value) = part.split("=", 1)
                     # certain options can have multiple entries in the authorized_keys file
                     if key in OPTIONS_WITH_MULTIPLE_VALUES:
-                        if key in options_dict.keys():
+                        if key in options_dict:
                             options_dict[key].append(value)
                         else:
                             options_dict[key] = [value]
